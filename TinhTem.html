@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tính Tem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .radio-label {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .radio-label:hover {
+            background-color: #F3F4F6;
+        }
+        input[type="radio"]:checked + .radio-label {
+            background-color: #DBEAFE;
+            border-color: #2563EB;
+            color: #1E40AF;
+            font-weight: 500;
+        }
+         input[type="radio"] {
+            display: none;
+        }
+        #packingCanvas {
+            border: 1px solid #9CA3AF; /* gray-400 */
+            background-color: #F9FAFB; /* gray-50 */
+            max-width: 100%;
+            height: auto;
+            aspect-ratio: 300 / 320; /* Default, will be adjusted */
+        }
+        .dimension-group {
+            display: none; /* Hidden by default */
+        }
+        .dimension-group.active {
+            display: block; /* Shown when active */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-lg">
+        <h1 class="text-2xl sm:text-3xl font-bold text-center text-blue-600 mb-6 sm:mb-8">
+            Tính Tem
+        </h1>
+
+        <div class="space-y-4 sm:space-y-6">
+            <div>
+                <label for="stampShape" class="block text-sm font-medium text-gray-700 mb-1">Hình dạng tem:</label>
+                <select id="stampShape" name="stampShape" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="rectangle" selected>Hình chữ nhật</option>
+                    <option value="circle">Hình tròn</option>
+                    <option value="ellipse">Hình elip</option>
+                </select>
+            </div>
+
+            <div id="rectDimensionsDiv" class="dimension-group active space-y-4">
+                <div>
+                    <label for="stampWidth" class="block text-sm font-medium text-gray-700 mb-1">Kích thước tem - Ngang (cm):</label>
+                    <input type="number" id="stampWidth" name="stampWidth" step="any" min="0.1"
+                           class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           placeholder="Ví dụ: 5">
+                </div>
+                <div>
+                    <label for="stampHeight" class="block text-sm font-medium text-gray-700 mb-1">Kích thước tem - Cao (cm):</label>
+                    <input type="number" id="stampHeight" name="stampHeight" step="any" min="0.1"
+                           class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           placeholder="Ví dụ: 3">
+                </div>
+            </div>
+
+            <div id="circleDimensionsDiv" class="dimension-group space-y-4">
+                <div>
+                    <label for="circleDiameter" class="block text-sm font-medium text-gray-700 mb-1">Đường kính tem (cm):</label>
+                    <input type="number" id="circleDiameter" name="circleDiameter" step="any" min="0.1"
+                           class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           placeholder="Ví dụ: 4">
+                </div>
+            </div>
+
+            <div id="ellipseDimensionsDiv" class="dimension-group space-y-4">
+                <div>
+                    <label for="ellipseMajorAxis" class="block text-sm font-medium text-gray-700 mb-1">Trục lớn tem (cm):</label>
+                    <input type="number" id="ellipseMajorAxis" name="ellipseMajorAxis" step="any" min="0.1"
+                           class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           placeholder="Ví dụ: 6">
+                </div>
+                <div>
+                    <label for="ellipseMinorAxis" class="block text-sm font-medium text-gray-700 mb-1">Trục nhỏ tem (cm):</label>
+                    <input type="number" id="ellipseMinorAxis" name="ellipseMinorAxis" step="any" min="0.1"
+                           class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           placeholder="Ví dụ: 4">
+                </div>
+            </div>
+
+
+            <div>
+                <label for="totalQuantity" class="block text-sm font-medium text-gray-700 mb-1">Tổng số lượng tem cần:</label>
+                <input type="number" id="totalQuantity" name="totalQuantity" step="1" min="1"
+                       class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                       placeholder="Ví dụ: 100">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Khổ Giấy:</label>
+                <div class="flex space-x-3 sm:space-x-4">
+                    <div>
+                        <input type="radio" id="sheetSize30x32" name="sheetSize" value="30x32" checked class="hidden">
+                        <label for="sheetSize30x32" class="radio-label">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4V5h12v10z" clip-rule="evenodd" />
+                            </svg>
+                            33 x 35 cm
+                        </label>
+                    </div>
+                    <div>
+                        <input type="radio" id="sheetSize30x42" name="sheetSize" value="30x42" class="hidden">
+                        <label for="sheetSize30x42" class="radio-label">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4V5h12v10z" clip-rule="evenodd" />
+                            </svg>
+                            33 x 48 cm
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="calculateButton"
+                class="mt-6 sm:mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
+            Tính Toán
+        </button>
+
+        <div id="resultsArea" class="mt-6 sm:mt-8 p-4 sm:p-6 bg-blue-50 border-l-4 border-blue-500 rounded-md hidden">
+            <h2 class="text-lg sm:text-xl font-semibold text-blue-700 mb-2 sm:mb-3">Kết quả tính toán:</h2>
+            <p id="stampsPerSheetResult" class="text-gray-800 text-sm sm:text-base"></p>
+            <p id="totalSheetsResult" class="text-gray-800 text-sm sm:text-base mt-1"></p>
+            <p id="errorMessage" class="text-red-600 font-medium text-sm sm:text-base mt-1"></p>
+            
+            <div id="imageIllustrationArea" class="mt-4 pt-4 border-t border-blue-200 hidden">
+                <h3 class="text-md font-semibold text-gray-700 mb-2">Minh họa cách ghép tem tối ưu:</h3>
+                <canvas id="packingCanvas" width="300" height="320"></canvas> 
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_SIZES = {
+            "30x32": { width: 30, height: 32, label: "33x35 cm" },
+            "30x42": { width: 30, height: 42, label: "33x48 cm" }
+        };
+
+        const stampShapeSelect = document.getElementById('stampShape');
+        const rectDimensionsDiv = document.getElementById('rectDimensionsDiv');
+        const circleDimensionsDiv = document.getElementById('circleDimensionsDiv');
+        const ellipseDimensionsDiv = document.getElementById('ellipseDimensionsDiv');
+
+        const stampWidthInput = document.getElementById('stampWidth');
+        const stampHeightInput = document.getElementById('stampHeight');
+        const circleDiameterInput = document.getElementById('circleDiameter');
+        const ellipseMajorAxisInput = document.getElementById('ellipseMajorAxis');
+        const ellipseMinorAxisInput = document.getElementById('ellipseMinorAxis');
+        
+        const totalQuantityInput = document.getElementById('totalQuantity');
+        const calculateButton = document.getElementById('calculateButton');
+        const resultsArea = document.getElementById('resultsArea');
+        const stampsPerSheetResult = document.getElementById('stampsPerSheetResult');
+        const totalSheetsResult = document.getElementById('totalSheetsResult');
+        const errorMessage = document.getElementById('errorMessage');
+        const sheetSizeRadios = document.querySelectorAll('input[name="sheetSize"]');
+        const imageIllustrationArea = document.getElementById('imageIllustrationArea');
+        const packingCanvas = document.getElementById('packingCanvas');
+        const ctx = packingCanvas.getContext('2d');
+
+        stampShapeSelect.addEventListener('change', function() {
+            rectDimensionsDiv.classList.remove('active');
+            circleDimensionsDiv.classList.remove('active');
+            ellipseDimensionsDiv.classList.remove('active');
+
+            if (this.value === 'rectangle') {
+                rectDimensionsDiv.classList.add('active');
+            } else if (this.value === 'circle') {
+                circleDimensionsDiv.classList.add('active');
+            } else if (this.value === 'ellipse') {
+                ellipseDimensionsDiv.classList.add('active');
+            }
+        });
+
+        // Hàm tính toán và trả về chi tiết cách xếp
+        // itemW, itemH là kích thước của bounding box
+        // applyStagger: true nếu là hình tròn/elip và muốn xếp so le
+        function calculateLayout(sheetW, sheetH, itemW, itemH, baseStrategyName, applyStagger) {
+            const stampsToDraw = [];
+            // Kiểm tra cơ bản: tem phải có kích thước dương và ít nhất một tem phải vừa tờ giấy
+            if (itemW <= 0 || itemH <= 0 || sheetW < itemW || sheetH < itemH) {
+                return { count: 0, stampsToDraw, strategyName: baseStrategyName + "_fail" };
+            }
+
+            let totalCount = 0;
+            let currentY = 0; // Vị trí y của đỉnh bounding box của hàng hiện tại
+            let rowNum = 0;   // Số thứ tự hàng (bắt đầu từ 0)
+
+            // Bước nhảy theo chiều dọc giữa các hàng.
+            // Đối với xếp so le, bước nhảy này nhỏ hơn chiều cao của tem (itemH).
+            // Đối với xếp không so le, bước nhảy bằng itemH.
+            const verticalRowStep = applyStagger ? itemH * (Math.sqrt(3) / 2) : itemH;
+            
+            // Đảm bảo verticalRowStep không quá nhỏ hoặc bằng 0 nếu itemH rất nhỏ, để tránh vòng lặp vô hạn
+            let effectiveVerticalStep = verticalRowStep;
+            if (applyStagger && verticalRowStep < 0.001 && itemH > 0) {
+                effectiveVerticalStep = itemH; // Quay lại xếp không so le nếu bước nhảy quá nhỏ
+                applyStagger = false; // Tắt cờ so le hiệu quả
+            }
+            if (effectiveVerticalStep <= 0 && itemH > 0) { // Trường hợp itemH > 0 nhưng bước nhảy lại <=0
+                 effectiveVerticalStep = itemH; // An toàn nhất là dùng itemH
+                 applyStagger = false;
+            }
+
+
+            // Vòng lặp qua các hàng, tiếp tục miễn là toàn bộ chiều cao của tem (itemH) của hàng tiếp theo còn nằm trong tờ giấy
+            while (currentY + itemH <= sheetH + 0.0001) { // Thêm epsilon nhỏ để xử lý sai số float
+                let startX = 0; // Vị trí x bắt đầu của hàng hiện tại
+                let numColsInRow; // Số cột trong hàng hiện tại
+
+                // Nếu xếp so le và đây là hàng lẻ (rowNum = 1, 3, 5, ...), dịch chuyển hàng sang phải
+                if (applyStagger && rowNum % 2 !== 0) {
+                    startX = itemW / 2;
+                    // Kiểm tra xem sau khi dịch chuyển, có đủ chỗ cho ít nhất một tem không
+                    if (startX + itemW > sheetW + 0.0001) {
+                        numColsInRow = 0; // Không đủ chỗ
+                    } else {
+                        numColsInRow = Math.floor((sheetW - startX) / itemW);
+                    }
+                } else { // Hàng chẵn (rowNum = 0, 2, 4, ...) hoặc không xếp so le
+                    numColsInRow = Math.floor(sheetW / itemW);
+                }
+
+                // Đặt các tem vào hàng hiện tại
+                for (let c = 0; c < numColsInRow; c++) {
+                    const currentX = startX + c * itemW;
+                    // Đảm bảo tem nằm hoàn toàn trong chiều rộng tờ giấy
+                    if (currentX + itemW <= sheetW + 0.0001) {
+                         stampsToDraw.push({ x: currentX, y: currentY, w: itemW, h: itemH, type: baseStrategyName });
+                         totalCount++;
+                    }
+                }
+
+                rowNum++; // Chuyển sang hàng tiếp theo
+                if (itemH <= 0) break; // An toàn: nếu itemH bằng 0 thì dừng
+
+                if (rowNum === 1 && effectiveVerticalStep === 0 && itemH > 0) { 
+                    // Trường hợp đặc biệt: bước nhảy đầu tiên bằng 0 nhưng itemH > 0 (lỗi logic)
+                    // nên tăng currentY bằng itemH để tránh kẹt
+                    currentY += itemH;
+                } else if (effectiveVerticalStep > 0) {
+                    currentY += effectiveVerticalStep; // Tăng y theo bước nhảy đã tính
+                } else { // Nếu effectiveVerticalStep vẫn <= 0 (không nên xảy ra với các kiểm tra ở trên)
+                    currentY += itemH; // Tăng theo chiều cao tem để đảm bảo tiến trình
+                }
+            }
+            return { count: totalCount, stampsToDraw, strategyName: baseStrategyName + (applyStagger ? "_staggered_optimized" : "") };
+        }
+
+
+        // itemW_bbox, itemH_bbox là kích thước hình chữ nhật bao quanh tem
+        // currentSelectedShape được truyền vào để quyết định có áp dụng xếp so le không
+        function getBestPackingStrategy(sheetW, sheetH, itemW_bbox, itemH_bbox, currentSelectedShape) {
+            if (itemW_bbox <= 0 || itemH_bbox <= 0) return { count: 0, stampsToDraw: [], strategyName: 'invalid_stamp_size', packedItemW: 0, packedItemH: 0 };
+
+            const strategies = [];
+            const applyStagger = (currentSelectedShape === 'circle' || currentSelectedShape === 'ellipse');
+
+            // Chiến lược 1: Sử dụng itemW_bbox, itemH_bbox như hiện tại
+            strategies.push({
+                ...calculateLayout(sheetW, sheetH, itemW_bbox, itemH_bbox, 'primary_orientation', applyStagger),
+                packedItemW: itemW_bbox, 
+                packedItemH: itemH_bbox
+            });
+
+            // Chiến lược 2: Xoay bbox 90 độ (nếu itemW_bbox != itemH_bbox)
+            if (itemW_bbox !== itemH_bbox) {
+                 strategies.push({
+                    ...calculateLayout(sheetW, sheetH, itemH_bbox, itemW_bbox, 'secondary_orientation', applyStagger),
+                    packedItemW: itemH_bbox, 
+                    packedItemH: itemW_bbox
+                });
+            }
+            
+            let bestStrategy = { count: -1, stampsToDraw: [], strategyName: 'no_valid_strategy', packedItemW: 0, packedItemH: 0 };
+            if (strategies.length > 0) {
+                bestStrategy = strategies[0]; // Khởi tạo với chiến lược đầu tiên
+                for (let i = 0; i < strategies.length; i++) { // Duyệt qua tất cả, bao gồm cả cái đầu tiên
+                    if (strategies[i].count > bestStrategy.count) {
+                        bestStrategy = strategies[i];
+                    }
+                }
+            }
+            
+            if (bestStrategy.count <= 0) { // Nếu không có chiến lược nào xếp được tem
+                 bestStrategy.packedItemW = itemW_bbox; // Giữ lại kích thước bbox ban đầu
+                 bestStrategy.packedItemH = itemH_bbox;
+                 bestStrategy.strategyName = bestStrategy.strategyName === 'no_valid_strategy' ? 'cannot_fit_any_stamp' : bestStrategy.strategyName;
+            }
+
+
+            return bestStrategy;
+        }
+        
+        function drawPackingIllustration(sheetW_cm, sheetH_cm, packingDetails, selectedShape) {
+            const canvasW = packingCanvas.width; 
+            let canvasH = (canvasW / sheetW_cm) * sheetH_cm; 
+
+            const maxCanvasHeight = Math.min(400, canvasW * 1.5); 
+            if (canvasH > maxCanvasHeight) {
+                canvasH = maxCanvasHeight;
+            }
+            packingCanvas.height = canvasH; 
+            packingCanvas.style.aspectRatio = `${sheetW_cm} / ${sheetH_cm}`;
+
+            ctx.clearRect(0, 0, canvasW, canvasH);
+
+            const scaleX = canvasW / sheetW_cm;
+            const scaleY = canvasH / sheetH_cm;
+            const scale = Math.min(scaleX, scaleY); 
+
+            const drawingW = sheetW_cm * scale;
+            const drawingH = sheetH_cm * scale;
+            const offsetX = (canvasW - drawingW) / 2;
+            const offsetY = (canvasH - drawingH) / 2;
+
+            ctx.strokeStyle = '#CBD5E1'; 
+            ctx.lineWidth = 1;
+            ctx.strokeRect(offsetX, offsetY, drawingW, drawingH);
+
+            if (!packingDetails || !packingDetails.stampsToDraw) return;
+
+            packingDetails.stampsToDraw.forEach(bbox => { 
+                const bboxX_scaled = offsetX + bbox.x * scale;
+                const bboxY_scaled = offsetY + bbox.y * scale;
+                const bboxW_scaled = bbox.w * scale; 
+                const bboxH_scaled = bbox.h * scale; 
+
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.6)'; 
+                ctx.strokeStyle = '#4B5563'; 
+                ctx.lineWidth = 0.5;
+
+                if (selectedShape === 'circle') {
+                    const centerX = bboxX_scaled + bboxW_scaled / 2;
+                    const centerY = bboxY_scaled + bboxH_scaled / 2;
+                    const radius = Math.min(bboxW_scaled, bboxH_scaled) / 2;
+                    if (radius > 0.1) { // Thêm kiểm tra bán kính > 0 để tránh lỗi vẽ
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                } else if (selectedShape === 'ellipse') {
+                    const centerX = bboxX_scaled + bboxW_scaled / 2;
+                    const centerY = bboxY_scaled + bboxH_scaled / 2;
+                    const radiusX = bboxW_scaled / 2; 
+                    const radiusY = bboxH_scaled / 2; 
+                     if (radiusX > 0.1 && radiusY > 0.1) { // Thêm kiểm tra bán kính > 0
+                        ctx.beginPath();
+                        ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                } else { // rectangle
+                    ctx.fillRect(bboxX_scaled, bboxY_scaled, bboxW_scaled, bboxH_scaled);
+                    ctx.strokeRect(bboxX_scaled, bboxY_scaled, bboxW_scaled, bboxH_scaled);
+                }
+            });
+        }
+
+        function handleCalculation() {
+            resultsArea.classList.remove('hidden');
+            stampsPerSheetResult.textContent = '';
+            totalSheetsResult.textContent = '';
+            errorMessage.textContent = '';
+            imageIllustrationArea.classList.add('hidden');
+            ctx.clearRect(0, 0, packingCanvas.width, packingCanvas.height);
+
+            const selectedShape = stampShapeSelect.value;
+            let effectiveStampW, effectiveStampH; 
+            let validationError = false;
+
+            if (selectedShape === 'rectangle') {
+                effectiveStampW = parseFloat(stampWidthInput.value);
+                effectiveStampH = parseFloat(stampHeightInput.value);
+                if (isNaN(effectiveStampW) || effectiveStampW <= 0 || isNaN(effectiveStampH) || effectiveStampH <= 0) validationError = true;
+            } else if (selectedShape === 'circle') {
+                const diameter = parseFloat(circleDiameterInput.value);
+                if (isNaN(diameter) || diameter <= 0) validationError = true;
+                effectiveStampW = diameter;
+                effectiveStampH = diameter;
+            } else if (selectedShape === 'ellipse') {
+                const majorAxis = parseFloat(ellipseMajorAxisInput.value);
+                const minorAxis = parseFloat(ellipseMinorAxisInput.value);
+                if (isNaN(majorAxis) || majorAxis <= 0 || isNaN(minorAxis) || minorAxis <= 0) {
+                    validationError = true;
+                } else if (minorAxis > majorAxis) {
+                     errorMessage.textContent = 'Trục nhỏ không được lớn hơn trục lớn của elip.';
+                     validationError = true; 
+                } else {
+                    effectiveStampW = majorAxis; 
+                    effectiveStampH = minorAxis; 
+                }
+            }
+
+            const totalQuantity = parseInt(totalQuantityInput.value, 10);
+            if (isNaN(totalQuantity) || totalQuantity <= 0) validationError = true;
+
+            if (validationError) {
+                 if (!errorMessage.textContent) { 
+                    errorMessage.textContent = 'Vui lòng nhập giá trị hợp lệ (số dương) cho tất cả các trường.';
+                 }
+                resultsArea.classList.add('border-red-500', 'bg-red-50');
+                resultsArea.classList.remove('border-blue-500', 'bg-blue-50');
+                return;
+            }
+            resultsArea.classList.add('border-blue-500', 'bg-blue-50');
+            resultsArea.classList.remove('border-red-500', 'bg-red-50');
+
+            let selectedSheetValue;
+            sheetSizeRadios.forEach(radio => {
+                if (radio.checked) {
+                    selectedSheetValue = radio.value;
+                }
+            });
+
+            const currentSheetData = SHEET_SIZES[selectedSheetValue];
+            const currentSheetWidth_cm = currentSheetData.width;
+            const currentSheetHeight_cm = currentSheetData.height;
+            const currentSheetDisplayLabel = currentSheetData.label;
+
+            let bestPacking;
+
+            if (selectedShape === 'ellipse') {
+                const major = parseFloat(ellipseMajorAxisInput.value);
+                const minor = parseFloat(ellipseMinorAxisInput.value);
+
+                const packing1 = getBestPackingStrategy(currentSheetWidth_cm, currentSheetHeight_cm, major, minor, selectedShape);
+                let packing2 = { count: -1 }; 
+                if (major !== minor) { 
+                    packing2 = getBestPackingStrategy(currentSheetWidth_cm, currentSheetHeight_cm, minor, major, selectedShape);
+                }
+                
+                if (packing1.count >= packing2.count) {
+                    bestPacking = packing1;
+                } else {
+                    bestPacking = packing2;
+                }
+            } else {
+                 bestPacking = getBestPackingStrategy(currentSheetWidth_cm, currentSheetHeight_cm, effectiveStampW, effectiveStampH, selectedShape);
+            }
+            
+            const stampsPerSheet = bestPacking.count;
+            stampsPerSheetResult.textContent = `Số tem tối đa trên 1 tờ (${currentSheetDisplayLabel}): ${stampsPerSheet} tem.`;
+
+            if (stampsPerSheet > 0) {
+                const totalSheets = Math.ceil(totalQuantity / stampsPerSheet);
+                totalSheetsResult.textContent = `Tổng số tờ cần thiết: ${totalSheets} tờ.`;
+                imageIllustrationArea.classList.remove('hidden');
+                drawPackingIllustration(currentSheetWidth_cm, currentSheetHeight_cm, bestPacking, selectedShape);
+            } else {
+                 if (totalQuantity > 0) {
+                    totalSheetsResult.textContent = 'Tổng số tờ cần thiết: Không thể xếp tem lên tờ (tem quá lớn hoặc kích thước không hợp lệ).';
+                 } else {
+                    totalSheetsResult.textContent = 'Tổng số tờ cần thiết: 0 tờ (vì không cần tem nào).';
+                 }
+            }
+        }
+
+        calculateButton.addEventListener('click', handleCalculation);
+        const allInputs = [
+            stampWidthInput, stampHeightInput, circleDiameterInput, 
+            ellipseMajorAxisInput, ellipseMinorAxisInput, totalQuantityInput
+        ];
+        allInputs.forEach(input => {
+            if(input) { 
+                input.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        calculateButton.click();
+                    }
+                });
+            }
+        });
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            stampShapeSelect.dispatchEvent(new Event('change')); 
+            let selectedSheetValue = "30x32"; 
+             sheetSizeRadios.forEach(radio => {
+                if (radio.checked) {
+                    selectedSheetValue = radio.value;
+                }
+            });
+            const defaultSheet = SHEET_SIZES[selectedSheetValue];
+            packingCanvas.style.aspectRatio = `${defaultSheet.width} / ${defaultSheet.height}`;
+
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (!imageIllustrationArea.classList.contains('hidden') && resultsArea.classList.contains('border-blue-500')) { 
+                        handleCalculation(); 
+                    }
+                }, 250);
+            });
+        });
+    </script>
+</body>
+</html>
