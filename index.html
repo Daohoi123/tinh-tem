@@ -127,8 +127,14 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Khổ Giấy:</label>
-                    <div class="flex space-x-3 sm:space-x-4">
+                    <div class="flex items-center mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Khổ Giấy:</label>
+                        <label for="autoCutCheckbox" class="flex items-center cursor-pointer ml-4">
+                            <input type="checkbox" id="autoCutCheckbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">Bế tự động</span>
+                        </label>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-y-3 gap-x-4">
                         <div>
                             <input type="radio" id="sheetSize30x32" name="sheetSize" value="30x32" checked class="hidden">
                             <label for="sheetSize30x32" class="radio-label">
@@ -145,6 +151,15 @@
                                     <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4V5h12v10z" clip-rule="evenodd" />
                                 </svg>
                                 33 x 48 cm
+                            </label>
+                        </div>
+                         <div>
+                            <input type="radio" id="sheetSize33x41" name="sheetSize" value="33x41" class="hidden">
+                            <label for="sheetSize33x41" class="radio-label">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4V5h12v10z" clip-rule="evenodd" />
+                                </svg>
+                                33 x 41 cm
                             </label>
                         </div>
                     </div>
@@ -185,14 +200,23 @@
         const SHEET_SIZES = {
             "30x32": { 
                 label: "33x35 cm",
-                areas: [{ width: 30.8, height: 32.8 }] 
+                standard: { areas: [{ width: 30.8, height: 32.8 }] },
+                auto_cut: { areas: [{ width: 31.5, height: 33.5 }] }
             },
             "30x42": { 
                 label: "33x48 cm",
-                areas: [
-                    { width: 30.8, height: 43 },
-                    { width: 28, height: 45 }
-                ]
+                standard: {
+                    areas: [
+                        { width: 30.8, height: 43 },
+                        { width: 28, height: 45 }
+                    ]
+                },
+                auto_cut: { areas: [{ width: 31.5, height: 44.5 }] }
+            },
+            "33x41": {
+                label: "33x41 cm",
+                standard: { areas: [{ width: 30.8, height: 36 }] },
+                auto_cut: { areas: [{ width: 30.8, height: 36 }] }
             }
         };
 
@@ -214,19 +238,14 @@
         const errorMessage = document.getElementById('errorMessage');
         const imageIllustrationArea = document.getElementById('imageIllustrationArea');
         const packingCanvas = document.getElementById('packingCanvas');
+        const autoCutCheckbox = document.getElementById('autoCutCheckbox');
         const ctx = packingCanvas.getContext('2d');
 
         // --- NEW OPTIMIZED PACKING LOGIC WITH DRAWING ---
 
-        /**
-         * Calculates packing for one strategy and generates drawing coordinates.
-         * @returns {object} { count, stampsToDraw }
-         */
         function getPackingAndDrawingForStrategy(sheetW, sheetH, mainItemW, mainItemH, fillItemW, fillItemH) {
             const stampsToDraw = [];
             let count = 0;
-
-            // Main packing area
             const mainCols = Math.floor(sheetW / mainItemW);
             const mainRows = Math.floor(sheetH / mainItemH);
             for (let r = 0; r < mainRows; r++) {
@@ -235,13 +254,10 @@
                 }
             }
             count += mainCols * mainRows;
-
             const packedW = mainCols * mainItemW;
             const packedH = mainRows * mainItemH;
             const remW = sheetW - packedW;
             const remH = sheetH - packedH;
-
-            // Try filling the remaining space on the right
             let fillCountRight = 0;
             const stampsRight = [];
             if (remW > 0 && fillItemW > 0 && fillItemH > 0) {
@@ -249,27 +265,23 @@
                 const fillRows = Math.floor(sheetH / fillItemH);
                 for (let r = 0; r < fillRows; r++) {
                     for (let c = 0; c < fillCols; c++) {
-                        stampsRight.push({ x: packedW + c * fillItemW, y: r * fillItemH, w: fillItemW, h: fillItemH, color: 'rgba(239, 68, 68, 0.6)' }); // Red for rotated
+                        stampsRight.push({ x: packedW + c * fillItemW, y: r * fillItemH, w: fillItemW, h: fillItemH, color: 'rgba(239, 68, 68, 0.6)' });
                     }
                 }
                 fillCountRight = fillCols * fillRows;
             }
-
-            // Try filling the remaining space at the bottom
             let fillCountBottom = 0;
             const stampsBottom = [];
             if (remH > 0 && fillItemW > 0 && fillItemH > 0) {
-                const fillCols = Math.floor(packedW / fillItemW); // Use packedW, not full sheetW
+                const fillCols = Math.floor(packedW / fillItemW);
                 const fillRows = Math.floor(remH / fillItemH);
                 for (let r = 0; r < fillRows; r++) {
                     for (let c = 0; c < fillCols; c++) {
-                        stampsBottom.push({ x: c * fillItemW, y: packedH + r * fillItemH, w: fillItemW, h: fillItemH, color: 'rgba(239, 68, 68, 0.6)' }); // Red for rotated
+                        stampsBottom.push({ x: c * fillItemW, y: packedH + r * fillItemH, w: fillItemW, h: fillItemH, color: 'rgba(239, 68, 68, 0.6)' });
                     }
                 }
                 fillCountBottom = fillCols * fillRows;
             }
-
-            // Decide whether filling right or bottom is better and return the result
             if (fillCountRight > fillCountBottom) {
                 return { count: count + fillCountRight, stampsToDraw: [...stampsToDraw, ...stampsRight] };
             } else {
@@ -277,19 +289,10 @@
             }
         }
 
-        /**
-         * Calculates the maximum number of rectangular stamps and their positions.
-         * @returns {object} { count, stampsToDraw }
-         */
         function calculateAndDrawOptimalPacking(sheetW, sheetH, itemW, itemH) {
              if (itemW <= 0 || itemH <= 0) return { count: 0, stampsToDraw: [] };
-            // Strategy 1: Main orientation (itemW, itemH), fill with (itemH, itemW)
             const result1 = getPackingAndDrawingForStrategy(sheetW, sheetH, itemW, itemH, itemH, itemW);
-
-            // Strategy 2: Rotated orientation (itemH, itemW), fill with (itemW, itemH)
             const result2 = getPackingAndDrawingForStrategy(sheetW, sheetH, itemH, itemW, itemW, itemH);
-
-            // Compare and return the best result
             return result1.count >= result2.count ? result1 : result2;
         }
 
@@ -298,10 +301,8 @@
         function getBestPackingStrategyForShapes(sheetW, sheetH, itemW_bbox, itemH_bbox, currentSelectedShape) {
             if (itemW_bbox <= 0 || itemH_bbox <= 0) return { count: 0, stampsToDraw: []};
             const applyStagger = (currentSelectedShape === 'circle' || currentSelectedShape === 'ellipse');
-            
             const strategy1 = calculateLayoutForShapes(sheetW, sheetH, itemW_bbox, itemH_bbox, applyStagger);
             const strategy2 = (itemW_bbox !== itemH_bbox) ? calculateLayoutForShapes(sheetW, sheetH, itemH_bbox, itemW_bbox, applyStagger) : {count: -1};
-
             return strategy1.count >= strategy2.count ? strategy1 : strategy2;
         }
 
@@ -314,7 +315,6 @@
             const verticalRowStep = applyStagger ? itemH * (Math.sqrt(3) / 2) : itemH;
             let effectiveVerticalStep = verticalRowStep > 0.001 ? verticalRowStep : itemH;
             if(applyStagger && effectiveVerticalStep === itemH) applyStagger = false;
-
             while (currentY + itemH <= sheetH + 0.0001) {
                 let startX = 0;
                 let numColsInRow;
@@ -364,8 +364,7 @@
                 const bboxY_scaled = offsetY + bbox.y * scale;
                 const bboxW_scaled = bbox.w * scale; 
                 const bboxH_scaled = bbox.h * scale; 
-                
-                ctx.strokeStyle = '#1F2937'; // Darker border for stamps
+                ctx.strokeStyle = '#1F2937';
                 ctx.lineWidth = 0.5;
 
                 if (selectedShape === 'rectangle') {
@@ -448,8 +447,9 @@
             resultsArea.classList.remove('border-red-500', 'bg-red-50');
 
             const selectedSheetValue = document.querySelector('input[name="sheetSize"]:checked').value;
+            const isAutoCut = autoCutCheckbox.checked;
             const currentSheetData = SHEET_SIZES[selectedSheetValue];
-            const sheetCalculationAreas = currentSheetData.areas;
+            const sheetCalculationAreas = isAutoCut ? currentSheetData.auto_cut.areas : currentSheetData.standard.areas;
             const currentSheetDisplayLabel = currentSheetData.label;
             
             let maxStamps = 0;
