@@ -68,6 +68,10 @@
         .calc-btn.clear {
              @apply bg-red-500 hover:bg-red-600 text-white;
         }
+        /* Modal styles */
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
@@ -173,6 +177,16 @@
                                     33 x 41 cm
                                 </label>
                             </div>
+                            <!-- Nút chọn Nhập -->
+                            <div>
+                                <input type="radio" id="sheetSizeCustom" name="sheetSize" value="custom" class="hidden">
+                                <label for="sheetSizeCustom" id="customSheetLabel" class="radio-label">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                       <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    <span id="customSheetLabelText">Nhập</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -243,11 +257,33 @@
                 </div>
             </div>
         </div>
-
     </div>
 
+    <!-- Modal nhập kích thước -->
+    <div id="customSizeModal" class="modal-overlay fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Nhập khổ giấy</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="modalCustomSheetWidth" class="block text-sm font-medium text-gray-700 mb-1">Khổ rộng (cm):</label>
+                    <input type="number" id="modalCustomSheetWidth" step="any" min="1" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ví dụ: 30">
+                </div>
+                <div>
+                    <label for="modalCustomSheetHeight" class="block text-sm font-medium text-gray-700 mb-1">Khổ cao (cm):</label>
+                    <input type="number" id="modalCustomSheetHeight" step="any" min="1" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ví dụ: 40">
+                </div>
+            </div>
+            <p id="modalErrorMessage" class="text-red-600 text-sm mt-3 min-h-[1.25rem]"></p>
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="cancelCustomSize" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Hủy</button>
+                <button id="confirmCustomSize" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+
     <script>
-        // --- EXISTING LOGIC FOR STAMP CALCULATION ---
+        // --- LOGIC TÍNH TOÁN TEM ---
 
         const SHEET_SIZES = {
             "30x32": { 
@@ -288,14 +324,30 @@
         const stampsPerSheetResult = document.getElementById('stampsPerSheetResult');
         const totalSheetsResult = document.getElementById('totalSheetsResult');
         const errorMessage = document.getElementById('errorMessage');
-        const imageIllustrationArea = document.getElementById('imageIllustrationArea');
         const packingCanvas = document.getElementById('packingCanvas');
         const autoCutCheckbox = document.getElementById('autoCutCheckbox');
         const ctx = packingCanvas.getContext('2d');
+        
+        // DOM elements cho khổ giấy nhập và modal
+        const sheetSizeRadios = document.querySelectorAll('input[name="sheetSize"]');
+        const customSheetRadio = document.getElementById('sheetSizeCustom');
+        const customSheetLabel = document.getElementById('customSheetLabel');
+        const customSheetLabelText = document.getElementById('customSheetLabelText');
+        const customSizeModal = document.getElementById('customSizeModal');
+        const modalCustomSheetWidthInput = document.getElementById('modalCustomSheetWidth');
+        const modalCustomSheetHeightInput = document.getElementById('modalCustomSheetHeight');
+        const confirmCustomSizeBtn = document.getElementById('confirmCustomSize');
+        const cancelCustomSizeBtn = document.getElementById('cancelCustomSize');
+        const modalErrorMessage = document.getElementById('modalErrorMessage');
+
+        // Biến lưu trữ trạng thái
+        let lastSelectedSheet = document.querySelector('input[name="sheetSize"]:checked');
+        let customSheetDimensions = { width: 0, height: 0 };
 
         function getPackingAndDrawingForStrategy(sheetW, sheetH, mainItemW, mainItemH, fillItemW, fillItemH) {
             const stampsToDraw = [];
             let count = 0;
+            if (mainItemW <= 0 || mainItemH <= 0) return { count: 0, stampsToDraw: [] };
             const mainCols = Math.floor(sheetW / mainItemW);
             const mainRows = Math.floor(sheetH / mainItemH);
             for (let r = 0; r < mainRows; r++) {
@@ -387,6 +439,10 @@
         }
         
         function drawPackingIllustration(sheetW_cm, sheetH_cm, packingDetails, selectedShape) {
+            if (!sheetW_cm || !sheetH_cm || sheetW_cm <= 0 || sheetH_cm <= 0) {
+                ctx.clearRect(0, 0, packingCanvas.width, packingCanvas.height);
+                return;
+            };
             const canvasW = packingCanvas.width; 
             let canvasH = (canvasW / sheetW_cm) * sheetH_cm; 
             const maxCanvasHeight = Math.min(500, canvasW * 2); 
@@ -445,7 +501,6 @@
         }
 
         function handleCalculation() {
-            // Clear previous results
             stampsPerSheetResult.textContent = '';
             totalSheetsResult.textContent = '';
             errorMessage.textContent = '';
@@ -480,20 +535,35 @@
             const totalQuantity = parseInt(totalQuantityInput.value, 10);
             if (isNaN(totalQuantity) || totalQuantity <= 0) validationError = true;
 
+            const selectedSheetValue = document.querySelector('input[name="sheetSize"]:checked').value;
+            const isAutoCut = autoCutCheckbox.checked;
+            let sheetCalculationAreas;
+            let currentSheetDisplayLabel;
+
+            if (selectedSheetValue === 'custom') {
+                const { width: customW, height: customH } = customSheetDimensions;
+                if (customW <= 0 || customH <= 0) {
+                    errorMessage.textContent = 'Vui lòng nhập kích thước khổ giấy hợp lệ.';
+                    validationError = true;
+                } else {
+                    sheetCalculationAreas = [{ width: customW, height: customH }];
+                    currentSheetDisplayLabel = `Nhập ${customW}x${customH} cm`;
+                }
+            } else {
+                const currentSheetData = SHEET_SIZES[selectedSheetValue];
+                sheetCalculationAreas = isAutoCut ? currentSheetData.auto_cut.areas : currentSheetData.standard.areas;
+                currentSheetDisplayLabel = currentSheetData.label;
+            }
+
             if (validationError) {
-                 if (!errorMessage.textContent) errorMessage.textContent = 'Vui lòng nhập giá trị hợp lệ (số dương) cho tất cả các trường.';
+                 if (!errorMessage.textContent) errorMessage.textContent = 'Vui lòng nhập giá trị hợp lệ cho tất cả các trường.';
                 resultsArea.classList.add('bg-red-50', 'border-red-500');
                 resultsArea.classList.remove('bg-blue-50', 'border-blue-500');
                 return;
             }
+
             resultsArea.classList.add('bg-blue-50', 'border-blue-500');
             resultsArea.classList.remove('bg-red-50', 'border-red-500');
-
-            const selectedSheetValue = document.querySelector('input[name="sheetSize"]:checked').value;
-            const isAutoCut = autoCutCheckbox.checked;
-            const currentSheetData = SHEET_SIZES[selectedSheetValue];
-            const sheetCalculationAreas = isAutoCut ? currentSheetData.auto_cut.areas : currentSheetData.standard.areas;
-            const currentSheetDisplayLabel = currentSheetData.label;
             
             let maxStamps = 0;
             let bestPackingDetails = null;
@@ -549,12 +619,90 @@
             }
         });
         
+        // Logic cho modal khổ giấy nhập
+        function openCustomSizeModal() {
+            modalErrorMessage.textContent = '';
+            // Lấy giá trị hiện tại nếu có để người dùng dễ sửa
+            if(customSheetDimensions.width > 0) {
+                modalCustomSheetWidthInput.value = customSheetDimensions.width;
+            } else {
+                modalCustomSheetWidthInput.value = '';
+            }
+            if(customSheetDimensions.height > 0) {
+                modalCustomSheetHeightInput.value = customSheetDimensions.height;
+            } else {
+                modalCustomSheetHeightInput.value = '';
+            }
+            customSizeModal.classList.remove('hidden');
+            // Focus và chọn toàn bộ nội dung trong ô nhập đầu tiên
+            modalCustomSheetWidthInput.focus();
+            modalCustomSheetWidthInput.select();
+        }
+
+        function closeCustomSizeModal() {
+            customSizeModal.classList.add('hidden');
+        }
+        
+        sheetSizeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if(radio.value !== 'custom') {
+                    lastSelectedSheet = radio;
+                    if(customSheetDimensions.width === 0) {
+                        customSheetLabelText.textContent = 'Nhập';
+                    }
+                }
+            });
+        });
+
+        customSheetLabel.addEventListener('click', () => {
+             customSheetRadio.checked = true;
+             openCustomSizeModal();
+        });
+
+        cancelCustomSizeBtn.addEventListener('click', () => {
+            closeCustomSizeModal();
+            if (lastSelectedSheet) {
+                lastSelectedSheet.checked = true;
+            }
+        });
+        
+        customSizeModal.addEventListener('click', (e) => {
+             if(e.target === customSizeModal) {
+                cancelCustomSizeBtn.click();
+             }
+        });
+
+        confirmCustomSizeBtn.addEventListener('click', () => {
+            const width = parseFloat(modalCustomSheetWidthInput.value);
+            const height = parseFloat(modalCustomSheetHeightInput.value);
+
+            if(isNaN(width) || width <= 0 || isNaN(height) || height <= 0) {
+                modalErrorMessage.textContent = 'Vui lòng nhập kích thước hợp lệ.';
+                return;
+            }
+            
+            customSheetDimensions.width = width;
+            customSheetDimensions.height = height;
+            customSheetLabelText.textContent = `Nhập: ${width}x${height}cm`;
+            lastSelectedSheet = customSheetRadio;
+            closeCustomSizeModal();
+        });
+        
+        [modalCustomSheetWidthInput, modalCustomSheetHeightInput].forEach(input => {
+            input.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    confirmCustomSizeBtn.click();
+                }
+            });
+        });
+        
         window.addEventListener('DOMContentLoaded', () => {
             stampShapeSelect.dispatchEvent(new Event('change')); 
         });
 
 
-        // --- BASIC CALCULATOR LOGIC ---
+        // --- LOGIC MÁY TÍNH ---
         const calcDisplay = document.getElementById('calcDisplay');
         const calcHistory = document.getElementById('calcHistory');
         const calculator = document.getElementById('calculator');
@@ -570,7 +718,7 @@
                 const historyEntry = document.createElement('p');
                 historyEntry.className = 'text-sm mb-1';
                 historyEntry.textContent = `${expression} = ${result}`;
-                calcHistory.prepend(historyEntry); // Use prepend to add to the top
+                calcHistory.prepend(historyEntry);
 
                 calcDisplay.value = result;
             } catch (error) {
@@ -580,28 +728,16 @@
 
         calculator.addEventListener('click', function(e) {
             if (!e.target.matches('.calc-btn')) return;
-
             const key = e.target.textContent;
-            
-            if (calcDisplay.value === 'Lỗi') {
-                calcDisplay.value = '';
-            }
-
-            if (key === 'C') {
-                calcDisplay.value = '';
-            } else if (key === '=') {
-                performCalculation();
-            } else {
-                calcDisplay.value += key;
-            }
+            if (calcDisplay.value === 'Lỗi') calcDisplay.value = '';
+            if (key === 'C') calcDisplay.value = '';
+            else if (key === '=') performCalculation();
+            else calcDisplay.value += key;
         });
 
         calculator.addEventListener('keydown', function(e) {
             const key = e.key;
-            
-            if (calcDisplay.value === 'Lỗi') {
-                calcDisplay.value = '';
-            }
+            if (calcDisplay.value === 'Lỗi') calcDisplay.value = '';
 
             if (/[0-9\.]/.test(key) || /[\+\-\*\/]/.test(key)) {
                 e.preventDefault();
@@ -617,7 +753,6 @@
                 calcDisplay.value = '';
             }
         });
-
     </script>
 </body>
 </html>
